@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from "react";
@@ -6,6 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { MilkEntryDialog } from "@/components/milk-entry-dialog";
 import type { MilkData, Milkman } from "@/types";
 import { format } from "date-fns";
+import {isSameDay} from "date-fns";
 
 interface MilkTrackerProps {
   milkData: MilkData;
@@ -18,9 +20,14 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleDateSelect = (date: Date | undefined) => {
-    if (date) {
-      setSelectedDate(date);
-      setIsDialogOpen(true);
+    if (!date) return;
+
+    // If clicking the same date that's already selected, just re-open the dialog.
+    if (selectedDate && isSameDay(date, selectedDate)) {
+        setIsDialogOpen(true);
+    } else {
+        setSelectedDate(date);
+        setIsDialogOpen(true);
     }
   };
   
