@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { MilkEntryDialog } from "@/components/milk-entry-dialog";
@@ -16,13 +16,16 @@ interface MilkTrackerProps {
 
 export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [isDialogOpen, setIsDialogOpen] = useState(true); // Open dialog by default for today's date
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const initialOpenDone = useRef(false);
 
   useEffect(() => {
-    // This effect ensures the dialog opens for today's date on initial component mount.
-    // It runs only once.
-    setSelectedDate(new Date());
-    setIsDialogOpen(true);
+    // This effect ensures the dialog opens for today's date on the very first component mount.
+    if (!initialOpenDone.current) {
+        setSelectedDate(new Date());
+        setIsDialogOpen(true);
+        initialOpenDone.current = true;
+    }
   }, []);
   
   const handleDateSelect = (date: Date | undefined) => {
