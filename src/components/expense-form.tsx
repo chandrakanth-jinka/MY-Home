@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { CalendarIcon, Carrot, Milk, Utensils, Home, Car, Shirt, PlusCircle } from "lucide-react";
+import { CalendarIcon, PlusCircle } from "lucide-react";
 import { Calendar } from "./ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -44,7 +44,7 @@ const expenseCategories = [
 ];
 
 interface ExpenseFormProps {
-  addExpense: (expense: Omit<Expense, "id" | "addedBy" | "lastEditedBy">) => void;
+  addExpense: (expense: Omit<Expense, "id" | "addedBy" | "lastEditedBy" | "householdId">) => void;
 }
 
 export function ExpenseForm({ addExpense }: ExpenseFormProps) {

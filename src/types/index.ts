@@ -1,5 +1,6 @@
 export type Expense = {
   id: string;
+  householdId: string;
   date: Date;
   name: string;
   amount: number;
@@ -26,4 +27,17 @@ export type DailyMilkRecord = {
 
 export type MilkData = {
   [date: string]: DailyMilkRecord; // date is 'yyyy-MM-dd'
+};
+
+export type UserProfile = {
+  uid: string;
+  email: string;
+  householdId?: string;
+};
+
+export type Household = {
+  id: string;
+  name: string;
+  pin: string; // Should be hashed in a real app
+  members: string[]; // array of user uids
 };

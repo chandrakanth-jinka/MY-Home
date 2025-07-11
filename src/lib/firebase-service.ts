@@ -12,20 +12,102 @@ import {
   setDoc,
   getDoc,
   deleteField,
+  where,
+  getDocs,
+  writeBatch,
 } from "firebase/firestore";
-import type { Expense, MilkData, MilkEntry, Milkman } from "@/types";
-import { format } from "date-fns";
+import type { Expense, MilkData, MilkEntry, Milkman, UserProfile, Household } from "@/types";
+import type { User } from "firebase/auth";
 
-// Hardcoded household ID for now
-const HOUSEHOLD_ID = "default-household";
+// Auth & User Profile Functions
+export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
+    const userDocRef = doc(db, "users", uid);
+    const docSnap = await getDoc(userDocRef);
+    if (docSnap.exists()) {
+        return docSnap.data() as UserProfile;
+    }
+    return null;
+}
 
-const expensesCol = collection(db, `households/${HOUSEHOLD_ID}/expenses`);
-const milkCol = collection(db, `households/${HOUSEHOLD_ID}/milk`);
-const milkmenCol = collection(db, `households/${HOUSEHOLD_ID}/milkmen`);
+// Household Functions
+export const createHousehold = async (user: User, householdName: string, pin: string) => {
+    const householdsRef = collection(db, "households");
+    // Check if household name already exists
+    const q = query(householdsRef, where("name", "==", householdName));
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+        throw new Error("A household with this name already exists. Please choose another name.");
+    }
+
+    const batch = writeBatch(db);
+
+    // Create the household document
+    const householdDocRef = doc(householdsRef);
+    const newHousehold: Household = {
+        id: householdDocRef.id,
+        name: householdName,
+        pin: pin, // In a real app, this should be hashed.
+        members: [user.uid],
+    };
+    batch.set(householdDocRef, newHousehold);
+    
+    // Update the user's profile with the new household ID
+    const userDocRef = doc(db, "users", user.uid);
+    const userProfile: UserProfile = {
+        uid: user.uid,
+        email: user.email || "",
+        householdId: householdDocRef.id,
+    };
+    batch.set(userDocRef, userProfile, { merge: true });
+
+    await batch.commit();
+
+    return householdDocRef.id;
+}
+
+
+export const joinHousehold = async (user: User, householdName: string, pin: string): Promise<boolean> => {
+    const householdsRef = collection(db, "households");
+    const q = query(householdsRef, where("name", "==", householdName));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+        return false; // Household not found
+    }
+
+    const householdDoc = querySnapshot.docs[0];
+    const householdData = householdDoc.data() as Household;
+
+    if (householdData.pin !== pin) {
+        return false; // Incorrect PIN
+    }
+
+    const batch = writeBatch(db);
+
+    // Add user to household's member list
+    const householdDocRef = doc(db, "households", householdDoc.id);
+    batch.update(householdDocRef, {
+        members: [...householdData.members, user.uid]
+    });
+
+    // Update user's profile
+    const userDocRef = doc(db, "users", user.uid);
+    const userProfile: UserProfile = {
+        uid: user.uid,
+        email: user.email || "",
+        householdId: householdDoc.id,
+    };
+    batch.set(userDocRef, userProfile, { merge: true });
+
+    await batch.commit();
+
+    return true;
+}
 
 
 // Expenses Functions
-export const getExpenses = (callback: (data: Expense[]) => void) => {
+export const getExpenses = (householdId: string, callback: (data: Expense[]) => void) => {
+  const expensesCol = collection(db, `households/${householdId}/expenses`);
   const q = query(expensesCol, orderBy("date", "desc"));
   return onSnapshot(q, (snapshot) => {
     const expenses = snapshot.docs.map((doc) => {
@@ -40,7 +122,8 @@ export const getExpenses = (callback: (data: Expense[]) => void) => {
   });
 };
 
-export const addExpense = async (expense: Omit<Expense, "id">) => {
+export const addExpense = async (householdId: string, expense: Omit<Expense, "id">) => {
+  const expensesCol = collection(db, `households/${householdId}/expenses`);
   await addDoc(expensesCol, {
     ...expense,
     date: Timestamp.fromDate(expense.date),
@@ -48,7 +131,8 @@ export const addExpense = async (expense: Omit<Expense, "id">) => {
 };
 
 // Milk Data Functions
-export const getMilkData = (callback: (data: MilkData) => void) => {
+export const getMilkData = (householdId: string, callback: (data: MilkData) => void) => {
+    const milkCol = collection(db, `households/${householdId}/milk`);
     return onSnapshot(milkCol, (snapshot) => {
       const milkData: MilkData = {};
       snapshot.docs.forEach((doc) => {
@@ -59,12 +143,13 @@ export const getMilkData = (callback: (data: MilkData) => void) => {
 };
 
 export const updateMilkData = async (
+    householdId: string,
     date: string, // "yyyy-MM-dd"
     milkmanId: string,
     entry: { morning?: number; evening?: number },
     user: string
   ) => {
-    const dateDocRef = doc(db, `households/${HOUSEHOLD_ID}/milk`, date);
+    const dateDocRef = doc(db, `households/${householdId}/milk`, date);
   
     const updatePayload: { [key: string]: any } = {};
   
@@ -75,27 +160,21 @@ export const updateMilkData = async (
     if (Object.keys(newEntry).length > 1) { // more than just lastEditedBy
       updatePayload[`${milkmanId}`] = newEntry;
     } else {
-      // If both morning and evening are 0 or undefined, we remove the milkman's entry for that day
       updatePayload[`${milkmanId}`] = deleteField();
     }
   
     try {
         await setDoc(dateDocRef, updatePayload, { merge: true });
-
-        // Cleanup: if the document for the date is now empty, we could delete it,
-        // but Firestore doesn't charge for empty docs and this is simpler.
-        // We'll just filter empty objects on the client side.
-
     } catch (error) {
       console.error("Error updating milk data: ", error);
     }
 };
 
 // Milkmen Functions
-export const getMilkmen = (callback: (data: Milkman[]) => void) => {
+export const getMilkmen = (householdId: string, callback: (data: Milkman[]) => void) => {
+    const milkmenCol = collection(db, `households/${householdId}/milkmen`);
     return onSnapshot(milkmenCol, (snapshot) => {
       if (snapshot.empty) {
-        // Create default milkmen if none exist
         const defaultMilkmen: Omit<Milkman, "id">[] = [
             { name: "Amul", rate: 58 },
             { name: "Local Dairy", rate: 55 },
