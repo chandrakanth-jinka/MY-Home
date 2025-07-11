@@ -17,6 +17,7 @@ import {
   writeBatch,
   updateDoc,
   arrayUnion,
+  deleteDoc,
 } from "firebase/firestore";
 import type { Expense, MilkData, MilkEntry, Milkman, UserProfile, Household } from "@/types";
 import type { User } from "firebase/auth";
@@ -63,6 +64,18 @@ export const createHousehold = async (user: User, householdName: string, pin: st
         householdId: householdDocRef.id,
     };
     batch.set(userDocRef, userProfile, { merge: true });
+
+    // Add default milkmen
+    const milkmenColRef = collection(db, `households/${householdDocRef.id}/milkmen`);
+    const defaultMilkmen = [
+        { name: "Amul", rate: 58 },
+        { name: "Local Dairy", rate: 55 },
+    ];
+    defaultMilkmen.forEach(milkman => {
+        const milkmanDocRef = doc(milkmenColRef);
+        batch.set(milkmanDocRef, milkman);
+    });
+
 
     await batch.commit();
 
@@ -158,8 +171,8 @@ export const updateMilkData = async (
     const updatePayload: { [key: string]: any } = {};
   
     const newEntry: MilkEntry = { lastEditedBy: user };
-    if (entry.morning !== undefined && entry.morning > 0) newEntry.morning = entry.morning;
-    if (entry.evening !== undefined && entry.evening > 0) newEntry.evening = entry.evening;
+    if (entry.morning !== undefined && entry.morning >= 0) newEntry.morning = entry.morning;
+    if (entry.evening !== undefined && entry.evening >= 0) newEntry.evening = entry.evening;
   
     if (Object.keys(newEntry).length > 1) { // more than just lastEditedBy
       updatePayload[`${milkmanId}`] = newEntry;
@@ -179,27 +192,30 @@ export const getMilkmen = (householdId: string, callback: (data: Milkman[]) => v
     const milkmenCol = collection(db, `households/${householdId}/milkmen`);
     const q = query(milkmenCol, orderBy("name"));
     return onSnapshot(q, (snapshot) => {
-      if (snapshot.empty) {
-        // Only add default milkmen if the household was just created
-        // This is a simple check; a more robust solution might use a flag on the household doc.
-        const addDefaultMilkmen = async () => {
-             const defaultMilkmen: Omit<Milkman, "id">[] = [
-                { name: "Amul", rate: 58 },
-                { name: "Local Dairy", rate: 55 },
-            ];
-            const batch = writeBatch(db);
-            defaultMilkmen.forEach(milkman => {
-                const docRef = doc(milkmenCol);
-                batch.set(docRef, milkman)
-            });
-            await batch.commit();
-        }
-        addDefaultMilkmen();
-      }
       const milkmen = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as Milkman[];
       callback(milkmen);
     });
+};
+
+export const addMilkman = async (householdId: string, name: string, rate: number) => {
+    if (!householdId) throw new Error("Household ID is required");
+    const milkmenCol = collection(db, `households/${householdId}/milkmen`);
+    await addDoc(milkmenCol, { name, rate });
+};
+
+export const updateMilkman = async (householdId: string, milkmanId: string, name: string, rate: number) => {
+    if (!householdId || !milkmanId) throw new Error("Household and Milkman ID are required");
+    const milkmanDoc = doc(db, `households/${householdId}/milkmen`, milkmanId);
+    await updateDoc(milkmanDoc, { name, rate });
+};
+
+export const deleteMilkman = async (householdId: string, milkmanId: string) => {
+    if (!householdId || !milkmanId) throw new Error("Household and Milkman ID are required");
+    const milkmanDoc = doc(db, `households/${householdId}/milkmen`, milkmanId);
+    await deleteDoc(milkmanDoc);
+    // Note: This does not delete the historical milk entries for this milkman.
+    // That data will remain but won't be editable through the UI anymore. This is intended.
 };

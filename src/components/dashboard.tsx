@@ -5,51 +5,44 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExpenseTracker } from "@/components/expense-tracker";
 import { MilkTracker } from "@/components/milk-tracker";
 import { Reports } from "@/components/reports";
-import type { Expense, MilkData, Milkman, UserProfile } from "@/types";
-import { addExpense, getExpenses, getMilkData, updateMilkData, getMilkmen, getUserProfile } from "@/lib/firebase-service";
+import type { Expense, MilkData, Milkman } from "@/types";
+import { addExpense, getExpenses, getMilkData, updateMilkData, getMilkmen } from "@/lib/firebase-service";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 export function Dashboard() {
   const [user, authLoading] = useAuthState(auth);
+  const { userProfile, loading: profileLoading } = useUserProfile(user?.uid);
   const router = useRouter();
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [milkData, setMilkData] = useState<MilkData>({});
   const [milkmen, setMilkmen] = useState<Milkman[]>([]);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || profileLoading) return;
     if (!user) {
       router.replace('/login');
       return;
     }
-
-    const fetchUserProfile = async () => {
-      const profile = await getUserProfile(user.uid);
-      if (profile && profile.householdId) {
-        setUserProfile(profile);
-      } else {
-        router.replace('/household');
-      }
-    };
-    fetchUserProfile();
-
-  }, [user, authLoading, router]);
-
-  useEffect(() => {
-    if (!userProfile || !userProfile.householdId) return;
+    if (!userProfile?.householdId) {
+      router.replace('/household');
+      return;
+    }
 
     const householdId = userProfile.householdId;
-    setLoading(true);
+    let localLoading = true;
 
     const unsubscribeExpenses = getExpenses(householdId, (data) => {
         setExpenses(data);
-        setLoading(false);
+        if(localLoading) {
+            setLoading(false);
+            localLoading = false;
+        }
     });
     const unsubscribeMilkData = getMilkData(householdId, (data) => {
         setMilkData(data);
@@ -63,7 +56,7 @@ export function Dashboard() {
         unsubscribeMilkData();
         unsubscribeMilkmen();
     };
-  }, [userProfile]);
+  }, [user, userProfile, authLoading, profileLoading, router]);
   
   const handleAddExpense = async (expense: Omit<Expense, 'id' | 'addedBy' | 'lastEditedBy' | 'householdId'>) => {
     if (!user || !userProfile?.householdId) return;
@@ -81,7 +74,7 @@ export function Dashboard() {
     await updateMilkData(userProfile.householdId, date, milkmanId, entry, user.email || "Unknown User");
   };
 
-  if (loading || authLoading || !userProfile) {
+  if (loading || authLoading || profileLoading) {
       return (
         <div className="flex h-48 w-full items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
