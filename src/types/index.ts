@@ -5,6 +5,7 @@ export type Expense = {
   amount: number;
   category: string;
   addedBy: string;
+  lastEditedBy: string;
 };
 
 export type Milkman = {
@@ -16,6 +17,7 @@ export type Milkman = {
 export type MilkEntry = {
   morning?: number;
   evening?: number;
+  lastEditedBy?: string;
 };
 
 export type DailyMilkRecord = {

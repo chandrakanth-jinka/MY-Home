@@ -27,6 +27,7 @@ export function ExpensesTable({ expenses }: ExpensesTableProps) {
                             <TableHead>Item</TableHead>
                             <TableHead>Category</TableHead>
                             <TableHead>Added By</TableHead>
+                            <TableHead>Last Edited By</TableHead>
                             <TableHead className="text-right">Amount</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -38,6 +39,7 @@ export function ExpensesTable({ expenses }: ExpensesTableProps) {
                                     <TableCell className="font-medium">{expense.name}</TableCell>
                                     <TableCell>{expense.category}</TableCell>
                                     <TableCell>{expense.addedBy}</TableCell>
+                                    <TableCell>{expense.lastEditedBy}</TableCell>
                                     <TableCell className="text-right">
                                         ₹{expense.amount.toFixed(2)}
                                     </TableCell>
@@ -45,7 +47,7 @@ export function ExpensesTable({ expenses }: ExpensesTableProps) {
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">
+                                <TableCell colSpan={6} className="h-24 text-center">
                                     No expenses recorded yet.
                                 </TableCell>
                             </TableRow>

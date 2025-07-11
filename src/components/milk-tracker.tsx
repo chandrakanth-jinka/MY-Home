@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { MilkEntryDialog } from "@/components/milk-entry-dialog";
-import type { DayPicker } from "react-day-picker";
 import type { MilkData, Milkman } from "@/types";
 import { format } from "date-fns";
 
@@ -27,7 +26,7 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
   
   const MilkDots = (day: Date) => {
     const dateString = format(day, "yyyy-MM-dd");
-    if (milkData[dateString]) {
+    if (milkData[dateString] && Object.keys(milkData[dateString]).length > 0) {
       return <div className="milk-dot bg-primary"></div>;
     }
     return null;

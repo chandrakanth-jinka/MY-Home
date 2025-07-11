@@ -8,7 +8,7 @@ import { Separator } from "./ui/separator";
 
 interface ExpenseTrackerProps {
   expenses: Expense[];
-  addExpense: (expense: Omit<Expense, "id" | "addedBy">) => void;
+  addExpense: (expense: Omit<Expense, "id" | "addedBy" | "lastEditedBy">) => void;
 }
 
 export function ExpenseTracker({ expenses, addExpense }: ExpenseTrackerProps) {

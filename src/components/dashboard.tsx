@@ -1,54 +1,58 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExpenseTracker } from "@/components/expense-tracker";
 import { MilkTracker } from "@/components/milk-tracker";
 import { Reports } from "@/components/reports";
 import type { Expense, MilkData, Milkman } from "@/types";
+import { addExpense, getExpenses, getMilkData, updateMilkData, getMilkmen } from "@/lib/firebase-service";
 
 export function Dashboard() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [milkData, setMilkData] = useState<MilkData>({});
   const [milkmen, setMilkmen] = useState<Milkman[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addExpense = (expense: Omit<Expense, 'id' | 'addedBy'>) => {
-    setExpenses(prev => [
-      { ...expense, id: Date.now().toString(), addedBy: 'You' },
-      ...prev
-    ].sort((a,b) => b.date.getTime() - a.date.getTime()));
-  };
+  // Hardcoded user for now
+  const currentUser = "User1"; 
 
-  const updateMilkEntry = (date: string, milkmanId: string, entry: { morning?: number, evening?: number }) => {
-    setMilkData(prev => {
-      const newMilkData = { ...prev };
-      if (!newMilkData[date]) {
-        newMilkData[date] = {};
-      }
-      if (!newMilkData[date][milkmanId]) {
-        newMilkData[date][milkmanId] = {};
-      }
-      
-      const currentEntry = newMilkData[date][milkmanId];
-      const newEntry = {
-        morning: entry.morning ?? currentEntry.morning,
-        evening: entry.evening ?? currentEntry.evening,
-      }
-
-      // If both are 0 or undefined, remove the entry for that milkman
-      if(!newEntry.morning && !newEntry.evening) {
-        delete newMilkData[date][milkmanId];
-        // if no milkmen left for the date, remove date entry
-        if(Object.keys(newMilkData[date]).length === 0) {
-          delete newMilkData[date];
-        }
-      } else {
-        newMilkData[date][milkmanId] = newEntry;
-      }
-      
-      return newMilkData;
+  useEffect(() => {
+    const unsubscribeExpenses = getExpenses((data) => {
+        setExpenses(data);
+        setLoading(false);
     });
+    const unsubscribeMilkData = getMilkData((data) => {
+        setMilkData(data);
+    });
+    const unsubscribeMilkmen = getMilkmen((data) => {
+        setMilkmen(data);
+    });
+
+
+    return () => {
+        unsubscribeExpenses();
+        unsubscribeMilkData();
+        unsubscribeMilkmen();
+    };
+  }, []);
+  
+  const handleAddExpense = async (expense: Omit<Expense, 'id' | 'addedBy' | 'lastEditedBy'>) => {
+    const newExpense: Omit<Expense, 'id'> = {
+        ...expense,
+        addedBy: currentUser,
+        lastEditedBy: currentUser,
+    };
+    await addExpense(newExpense);
   };
+
+  const handleUpdateMilkEntry = async (date: string, milkmanId: string, entry: { morning?: number, evening?: number }) => {
+    await updateMilkData(date, milkmanId, entry, currentUser);
+  };
+
+  if (loading) {
+      return <div>Loading...</div>
+  }
 
   return (
     <Tabs defaultValue="expenses" className="w-full">
@@ -58,13 +62,13 @@ export function Dashboard() {
         <TabsTrigger value="reports">Reports</TabsTrigger>
       </TabsList>
       <TabsContent value="expenses">
-        <ExpenseTracker expenses={expenses} addExpense={addExpense} />
+        <ExpenseTracker expenses={expenses} addExpense={handleAddExpense} />
       </TabsContent>
       <TabsContent value="milk">
         <MilkTracker 
           milkData={milkData} 
           milkmen={milkmen}
-          updateMilkEntry={updateMilkEntry}
+          updateMilkEntry={handleUpdateMilkEntry}
         />
       </TabsContent>
       <TabsContent value="reports">

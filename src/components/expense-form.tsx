@@ -43,17 +43,8 @@ const expenseCategories = [
   "Utilities", "Health", "Education", "Clothing", "Personal Care", "Home Improvement", "Other",
 ];
 
-const quickAddItems = [
-    { name: 'Vegetables', icon: Carrot, category: 'Vegetables' },
-    { name: 'Milk', icon: Milk, category: 'Milk' },
-    { name: 'Dining Out', icon: Utensils, category: 'Dining Out' },
-    { name: 'Rent', icon: Home, category: 'Rent' },
-    { name: 'Transport', icon: Car, category: 'Transport' },
-    { name: 'Clothing', icon: Shirt, category: 'Clothing' },
-];
-
 interface ExpenseFormProps {
-  addExpense: (expense: Omit<Expense, "id" | "addedBy">) => void;
+  addExpense: (expense: Omit<Expense, "id" | "addedBy" | "lastEditedBy">) => void;
 }
 
 export function ExpenseForm({ addExpense }: ExpenseFormProps) {
