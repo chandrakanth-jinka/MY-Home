@@ -41,7 +41,7 @@ export function ExpenseForm({ addExpense }: ExpenseFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      amount: undefined,
+      amount: "" as unknown as number, // Changed from undefined
       date: new Date(),
     },
   });
@@ -54,6 +54,8 @@ export function ExpenseForm({ addExpense }: ExpenseFormProps) {
     });
     form.reset();
     form.setValue("date", new Date());
+    // After reset, amount becomes undefined again, so we reset it to empty string
+    form.setValue("amount", "" as unknown as number);
   }
   
   const handleQuickAdd = (name: string) => {
