@@ -170,18 +170,34 @@ export const updateMilkData = async (
   
     const updatePayload: { [key: string]: any } = {};
   
-    const newEntry: MilkEntry = { lastEditedBy: user };
-    if (entry.morning !== undefined && entry.morning >= 0) newEntry.morning = entry.morning;
-    if (entry.evening !== undefined && entry.evening >= 0) newEntry.evening = entry.evening;
-  
-    if (Object.keys(newEntry).length > 1) { // more than just lastEditedBy
-      updatePayload[`${milkmanId}`] = newEntry;
-    } else {
+    // Check if the entry is empty (both morning and evening are undefined or 0)
+    const isMorningEmpty = entry.morning === undefined || entry.morning === 0;
+    const isEveningEmpty = entry.evening === undefined || entry.evening === 0;
+
+    if (isMorningEmpty && isEveningEmpty) {
+      // If both are empty, we remove the field for this milkman
       updatePayload[`${milkmanId}`] = deleteField();
+    } else {
+      // Otherwise, we create or update the entry
+      const newEntry: MilkEntry = { lastEditedBy: user };
+      if (entry.morning !== undefined && entry.morning > 0) {
+        newEntry.morning = entry.morning;
+      }
+      if (entry.evening !== undefined && entry.evening > 0) {
+        newEntry.evening = entry.evening;
+      }
+      updatePayload[`${milkmanId}`] = newEntry;
     }
   
     try {
         await setDoc(dateDocRef, updatePayload, { merge: true });
+        
+        // After updating, check if the entire date document is now empty.
+        const dateDocSnap = await getDoc(dateDocRef);
+        if (dateDocSnap.exists() && Object.keys(dateDocSnap.data()).length === 0) {
+            // If the document is empty, delete it.
+            await deleteDoc(dateDocRef);
+        }
     } catch (error) {
       console.error("Error updating milk data: ", error);
     }

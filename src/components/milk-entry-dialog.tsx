@@ -23,7 +23,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { ChevronsUpDown, PlusCircle } from "lucide-react";
+import { ChevronsUpDown } from "lucide-react";
 
 
 interface MilkEntryDialogProps {

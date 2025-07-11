@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { MilkEntryDialog } from "@/components/milk-entry-dialog";
 import type { MilkData, Milkman } from "@/types";
-import { format, isSameDay } from "date-fns";
+import { format } from "date-fns";
 
 interface MilkTrackerProps {
   milkData: MilkData;
@@ -20,22 +20,13 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
-
-    const isSameDate = selectedDate && isSameDay(date, selectedDate);
-
-    if (isSameDate) {
-      // If clicking the same date, toggle the dialog
-      setIsDialogOpen(!isDialogOpen);
-    } else {
-      // If clicking a new date, select it and open the dialog
-      setSelectedDate(date);
-      setIsDialogOpen(true);
-    }
+    setSelectedDate(date);
+    setIsDialogOpen(true);
   };
   
   const MilkDots = (day: Date) => {
     const dateString = format(day, "yyyy-MM-dd");
-    if (milkData[dateString] && Object.keys(milkData[dateString]).length > 0) {
+    if (milkData[dateString] && Object.values(milkData[dateString]).some(entry => (entry.morning ?? 0) > 0 || (entry.evening ?? 0) > 0)) {
       return <div className="milk-dot bg-primary"></div>;
     }
     return null;
