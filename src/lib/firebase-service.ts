@@ -15,6 +15,8 @@ import {
   where,
   getDocs,
   writeBatch,
+  updateDoc,
+  arrayUnion,
 } from "firebase/firestore";
 import type { Expense, MilkData, MilkEntry, Milkman, UserProfile, Household } from "@/types";
 import type { User } from "firebase/auth";
@@ -48,6 +50,8 @@ export const createHousehold = async (user: User, householdName: string, pin: st
         name: householdName,
         pin: pin, // In a real app, this should be hashed.
         members: [user.uid],
+        createdBy: user.uid,
+        createdAt: Timestamp.now(),
     };
     batch.set(householdDocRef, newHousehold);
     
@@ -87,7 +91,7 @@ export const joinHousehold = async (user: User, householdName: string, pin: stri
     // Add user to household's member list
     const householdDocRef = doc(db, "households", householdDoc.id);
     batch.update(householdDocRef, {
-        members: [...householdData.members, user.uid]
+        members: arrayUnion(user.uid)
     });
 
     // Update user's profile
@@ -173,13 +177,24 @@ export const updateMilkData = async (
 // Milkmen Functions
 export const getMilkmen = (householdId: string, callback: (data: Milkman[]) => void) => {
     const milkmenCol = collection(db, `households/${householdId}/milkmen`);
-    return onSnapshot(milkmenCol, (snapshot) => {
+    const q = query(milkmenCol, orderBy("name"));
+    return onSnapshot(q, (snapshot) => {
       if (snapshot.empty) {
-        const defaultMilkmen: Omit<Milkman, "id">[] = [
-            { name: "Amul", rate: 58 },
-            { name: "Local Dairy", rate: 55 },
-        ];
-        defaultMilkmen.forEach(milkman => addDoc(milkmenCol, milkman));
+        // Only add default milkmen if the household was just created
+        // This is a simple check; a more robust solution might use a flag on the household doc.
+        const addDefaultMilkmen = async () => {
+             const defaultMilkmen: Omit<Milkman, "id">[] = [
+                { name: "Amul", rate: 58 },
+                { name: "Local Dairy", rate: 55 },
+            ];
+            const batch = writeBatch(db);
+            defaultMilkmen.forEach(milkman => {
+                const docRef = doc(milkmenCol);
+                batch.set(docRef, milkman)
+            });
+            await batch.commit();
+        }
+        addDefaultMilkmen();
       }
       const milkmen = snapshot.docs.map((doc) => ({
         id: doc.id,

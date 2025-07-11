@@ -1,3 +1,5 @@
+import type { Timestamp } from "firebase/firestore";
+
 export type Expense = {
   id: string;
   householdId: string;
@@ -40,4 +42,6 @@ export type Household = {
   name: string;
   pin: string; // Should be hashed in a real app
   members: string[]; // array of user uids
+  createdBy: string;
+  createdAt: Timestamp;
 };
