@@ -28,7 +28,7 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
     setSelectedDate(new Date(date));
-    setIsDialogOpen(true); // Always open the dialog on click
+    setIsDialogOpen(true); // always open on click
   };
   
   const MilkDots = ({ date }: { date: Date }) => {
