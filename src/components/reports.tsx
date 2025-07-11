@@ -11,6 +11,7 @@ import type { DateRange } from "react-day-picker";
 import { addDays, format, startOfMonth, eachDayOfInterval, compareAsc } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { ScrollArea } from "./ui/scroll-area";
+import { Milk, IndianRupee } from "lucide-react";
 
 interface ReportsProps {
   expenses: Expense[];
@@ -184,6 +185,42 @@ export function Reports({ expenses, milkData, milkmen }: ReportsProps) {
                 </CardContent>
             </Card>
         </div>
+        
+        {milkReport.byMilkman.length > 0 && (
+          <Card>
+              <CardHeader>
+                  <CardTitle>Milk Supplier Bills</CardTitle>
+                  <CardDescription>
+                      Summary of amount owed to each supplier for the selected period.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {milkReport.byMilkman.map((supplier) => (
+                      <Card key={supplier.name} className="flex flex-col">
+                          <CardHeader className="pb-4">
+                              <CardTitle className="text-lg">{supplier.name}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="flex-grow space-y-2">
+                              <div className="flex items-center justify-between text-sm">
+                                  <span className="text-muted-foreground flex items-center"><Milk className="mr-2 h-4 w-4" /> Total Quantity</span>
+                                  <span className="font-medium">{supplier.totalQty.toFixed(2)} L</span>
+                              </div>
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground flex items-center"><IndianRupee className="mr-2 h-4 w-4" /> Rate</span>
+                                <span className="font-medium">₹{supplier.rate.toFixed(2)} / L</span>
+                              </div>
+                          </CardContent>
+                          <div className="p-4 pt-0 mt-2">
+                              <div className="bg-muted rounded-lg p-3 text-center">
+                                  <p className="text-sm text-muted-foreground">Total Owed</p>
+                                  <p className="text-2xl font-bold text-primary">₹{supplier.totalCost.toFixed(2)}</p>
+                              </div>
+                          </div>
+                      </Card>
+                  ))}
+              </CardContent>
+          </Card>
+        )}
 
 
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-7">
@@ -263,3 +300,5 @@ export function Reports({ expenses, milkData, milkmen }: ReportsProps) {
     </div>
   );
 }
+
+    
