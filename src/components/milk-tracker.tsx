@@ -6,8 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { MilkEntryDialog } from "@/components/milk-entry-dialog";
 import type { MilkData, Milkman } from "@/types";
-import { format } from "date-fns";
-import {isSameDay} from "date-fns";
+import { format, isSameDay } from "date-fns";
 
 interface MilkTrackerProps {
   milkData: MilkData;
@@ -21,14 +20,11 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
-
-    // If clicking the same date that's already selected, just re-open the dialog.
-    if (selectedDate && isSameDay(date, selectedDate)) {
-        setIsDialogOpen(true);
-    } else {
-        setSelectedDate(date);
-        setIsDialogOpen(true);
-    }
+    
+    // Always set the selected date and ensure the dialog is flagged to open.
+    // This correctly handles re-opening the dialog for the same day.
+    setSelectedDate(date);
+    setIsDialogOpen(true);
   };
   
   const MilkDots = (day: Date) => {
