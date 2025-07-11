@@ -38,33 +38,33 @@ export function Dashboard() {
     let localLoading = true;
 
     const unsubscribeExpenses = getExpenses(householdId, (data) => {
-        setExpenses(data);
-        if(localLoading) {
-            setLoading(false);
-            localLoading = false;
-        }
+      setExpenses(data);
+      if (localLoading) {
+        setLoading(false);
+        localLoading = false;
+      }
     });
     const unsubscribeMilkData = getMilkData(householdId, (data) => {
-        setMilkData(data);
+      setMilkData(data);
     });
     const unsubscribeMilkmen = getMilkmen(householdId, (data) => {
-        setMilkmen(data);
+      setMilkmen(data);
     });
 
     return () => {
-        unsubscribeExpenses();
-        unsubscribeMilkData();
-        unsubscribeMilkmen();
+      unsubscribeExpenses();
+      unsubscribeMilkData();
+      unsubscribeMilkmen();
     };
   }, [user, userProfile, authLoading, profileLoading, router]);
-  
+
   const handleAddExpense = async (expense: Omit<Expense, 'id' | 'addedBy' | 'lastEditedBy' | 'householdId'>) => {
     if (!user || !userProfile?.householdId) return;
     const newExpense: Omit<Expense, 'id'> = {
-        ...expense,
-        householdId: userProfile.householdId,
-        addedBy: user.email || "Unknown User",
-        lastEditedBy: user.email || "Unknown User",
+      ...expense,
+      householdId: userProfile.householdId,
+      addedBy: userProfile.name || user.email || "Unknown User",
+      lastEditedBy: userProfile.name || user.email || "Unknown User",
     };
     await addExpense(userProfile.householdId, newExpense);
   };
@@ -75,11 +75,11 @@ export function Dashboard() {
   };
 
   if (loading || authLoading || profileLoading) {
-      return (
-        <div className="flex h-48 w-full items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      )
+    return (
+      <div className="flex h-48 w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (
@@ -93,8 +93,8 @@ export function Dashboard() {
         <ExpenseTracker expenses={expenses} addExpense={handleAddExpense} />
       </TabsContent>
       <TabsContent value="milk">
-        <MilkTracker 
-          milkData={milkData} 
+        <MilkTracker
+          milkData={milkData}
           milkmen={milkmen}
           updateMilkEntry={handleUpdateMilkEntry}
         />

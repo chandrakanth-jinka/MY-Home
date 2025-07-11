@@ -151,7 +151,7 @@ export function MilkmenManager({ milkmen }: MilkmenManagerProps) {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDelete(milkman.id)} className="bg-destructive hover:bg-destructive/90">
+                      <AlertDialogAction onClick={() => handleDelete(milkman.id)} className="bg-destructive hover:bg-destructive/90 text-white">
                         Delete
                       </AlertDialogAction>
                     </AlertDialogFooter>
@@ -169,13 +169,13 @@ export function MilkmenManager({ milkmen }: MilkmenManagerProps) {
               placeholder="New milkman name"
               className="h-8"
             />
-             <Input
-                type="number"
-                value={newMilkmanRate}
-                onChange={(e) => setNewMilkmanRate(e.target.value === '' ? '' : Number(e.target.value))}
-                className="h-8 w-24"
-                placeholder="Rate/L"
-              />
+            <Input
+              type="number"
+              value={newMilkmanRate}
+              onChange={(e) => setNewMilkmanRate(e.target.value === '' ? '' : Number(e.target.value))}
+              className="h-8 w-24"
+              placeholder="Rate/L"
+            />
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button size="icon" variant="ghost" className="h-8 w-8" disabled={!isAddFormValid}>

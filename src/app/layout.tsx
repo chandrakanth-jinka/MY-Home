@@ -7,7 +7,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
-  title: 'KinKeeper - Family Expense Tracker',
+  title: 'My Home',
   description: 'A mobile-first web app for tracking household expenses and daily milk deliveries.',
 };
 

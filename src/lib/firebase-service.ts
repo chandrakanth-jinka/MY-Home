@@ -61,6 +61,7 @@ export const createHousehold = async (user: User, householdName: string, pin: st
     const userProfile: UserProfile = {
         uid: user.uid,
         email: user.email || "",
+        ...(user.displayName ? { name: user.displayName } : {}),
         householdId: householdDocRef.id,
     };
     batch.set(userDocRef, userProfile, { merge: true });
@@ -112,6 +113,7 @@ export const joinHousehold = async (user: User, householdName: string, pin: stri
     const userProfile: UserProfile = {
         uid: user.uid,
         email: user.email || "",
+        ...(user.displayName ? { name: user.displayName } : {}),
         householdId: householdDoc.id,
     };
     batch.set(userDocRef, userProfile, { merge: true });

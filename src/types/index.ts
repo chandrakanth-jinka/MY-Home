@@ -33,6 +33,7 @@ export type MilkData = {
 export type UserProfile = {
   uid: string;
   email: string;
+  name?: string;
   householdId?: string;
 };
 

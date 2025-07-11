@@ -21,6 +21,10 @@ export function ExpenseTracker({ expenses, addExpense }: ExpenseTrackerProps) {
         <ExpenseForm addExpense={addExpense} />
         <Separator />
         <ExpensesTable expenses={expenses} />
+        {/* Footer */}
+        <div className="mt-16 w-full flex justify-center">
+          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.95rem' }}>Created by Chandrakanth</span>
+        </div>
       </CardContent>
     </Card>
   );

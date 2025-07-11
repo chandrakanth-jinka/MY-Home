@@ -10,15 +10,15 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -47,7 +47,7 @@ export function ExpensesTable({ expenses }: ExpensesTableProps) {
     const [isManaging, setIsManaging] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [currentExpense, setCurrentExpense] = useState<Partial<Expense>>({});
-    
+
     const householdId = userProfile?.householdId;
 
     const handleEditClick = (expense: Expense) => {
@@ -62,7 +62,7 @@ export function ExpensesTable({ expenses }: ExpensesTableProps) {
 
     const handleSaveEdit = async () => {
         if (!householdId || !editingId || !currentExpense.name || !currentExpense.amount || !currentExpense.date || !user?.email) return;
-        
+
         const updatedFields: Partial<Expense> = {
             name: currentExpense.name,
             amount: Number(currentExpense.amount),
@@ -99,6 +99,13 @@ export function ExpensesTable({ expenses }: ExpensesTableProps) {
             setCurrentExpense(prev => ({ ...prev, date }));
         }
     }
+
+    // Helper to extract name from email if needed
+    const displayName = (val: string) => {
+        if (!val) return "Unknown";
+        if (val.includes("@")) return val.split("@")[0];
+        return val;
+    };
 
     return (
         <div>
@@ -144,17 +151,17 @@ export function ExpensesTable({ expenses }: ExpensesTableProps) {
                                             </Popover>
                                         </TableCell>
                                         <TableCell>
-                                            <Input name="name" value={currentExpense.name || ''} onChange={handleInputChange} className="h-9"/>
+                                            <Input name="name" value={currentExpense.name || ''} onChange={handleInputChange} className="h-9" />
                                         </TableCell>
-                                        <TableCell>{expense.addedBy}</TableCell>
-                                        <TableCell>{expense.lastEditedBy}</TableCell>
+                                        <TableCell>{displayName(expense.addedBy)}</TableCell>
+                                        <TableCell>{displayName(expense.lastEditedBy)}</TableCell>
                                         <TableCell className="text-right">
                                             <Input name="amount" type="number" value={currentExpense.amount || ''} onChange={handleInputChange} className="h-9 w-24 ml-auto text-right" />
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
-                                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleSaveEdit}><Check className="h-4 w-4"/></Button>
-                                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleCancelEdit}><X className="h-4 w-4"/></Button>
+                                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleSaveEdit}><Check className="h-4 w-4" /></Button>
+                                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleCancelEdit}><X className="h-4 w-4" /></Button>
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -163,10 +170,10 @@ export function ExpensesTable({ expenses }: ExpensesTableProps) {
                                     <TableRow key={expense.id}>
                                         <TableCell>{format(expense.date, "dd MMM, yyyy")}</TableCell>
                                         <TableCell className="font-medium">{expense.name}</TableCell>
-                                        <TableCell>{expense.addedBy}</TableCell>
-                                        <TableCell>{expense.lastEditedBy}</TableCell>
+                                        <TableCell>{displayName(expense.addedBy)}</TableCell>
+                                        <TableCell>{displayName(expense.lastEditedBy)}</TableCell>
                                         <TableCell className="text-right">
-                                            ₹{expense.amount.toFixed(2)}
+                                            {expense.amount.toFixed(2)} rupees
                                         </TableCell>
                                         {isManaging && (
                                             <TableCell className="text-right">
@@ -189,7 +196,7 @@ export function ExpensesTable({ expenses }: ExpensesTableProps) {
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter>
                                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleDelete(expense.id)} className="bg-destructive hover:bg-destructive/90">
+                                                                <AlertDialogAction onClick={() => handleDelete(expense.id)} className="bg-destructive hover:bg-destructive/90 text-white">
                                                                     Delete
                                                                 </AlertDialogAction>
                                                             </AlertDialogFooter>

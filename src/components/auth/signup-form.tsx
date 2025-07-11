@@ -23,13 +23,15 @@ import {
 } from "@/components/ui/card";
 import Link from "next/link";
 import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { doc, setDoc } from "firebase/firestore";
 
 const formSchema = z.object({
+  name: z.string().min(2, { message: "Please enter your name." }),
   email: z.string().email({ message: "Please enter a valid email." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
 });
@@ -42,13 +44,19 @@ export function SignUpForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      name: "",
       email: "",
       password: "",
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    await createUserWithEmailAndPassword(values.email, values.password);
+    const userCred = await createUserWithEmailAndPassword(values.email, values.password);
+    if (userCred && userCred.user) {
+      // Save name to Firestore user profile
+      const userDocRef = doc(db, "users", userCred.user.uid);
+      await setDoc(userDocRef, { name: values.name }, { merge: true });
+    }
   }
 
   useEffect(() => {
@@ -81,6 +89,19 @@ export function SignUpForm() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your Name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="email"
