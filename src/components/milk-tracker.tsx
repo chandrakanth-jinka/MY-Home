@@ -27,19 +27,8 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
   
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
-  
-    const isSameDate = selectedDate?.toDateString() === date.toDateString();
-  
-    if (isSameDate) {
-      // If it's the same date, just toggle the dialog
-      setIsDialogOpen(prev => !prev);
-    } else {
-      // If it's a new date, open the dialog
-      setIsDialogOpen(true);
-    }
-  
-    // Always set a new date object to ensure re-renders
     setSelectedDate(new Date(date));
+    setIsDialogOpen(true); // Always open the dialog on click
   };
   
   const MilkDots = ({ date }: { date: Date }) => {
@@ -57,7 +46,6 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
       </CardHeader>
       <CardContent className="flex justify-center">
         <Calendar 
-            key={selectedDate?.toISOString()} // Force re-mount on date change
             mode="single"
             selected={selectedDate}
             onSelect={handleDateSelect}
