@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { Calendar as CalendarIcon } from "lucide-react"
-import { format, subDays } from "date-fns"
+import { format, subDays, subMonths, subYears } from "date-fns"
 import type { DateRange } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
@@ -51,6 +51,18 @@ export function DateRangePicker({
         case "last_30_days":
             onDateChange({ from: subDays(now, 29), to: now });
             break;
+        case "last_2_months":
+            onDateChange({ from: subMonths(now, 2), to: now });
+            break;
+        case "last_3_months":
+            onDateChange({ from: subMonths(now, 3), to: now });
+            break;
+        case "last_6_months":
+            onDateChange({ from: subMonths(now, 6), to: now });
+            break;
+        case "last_year":
+            onDateChange({ from: subYears(now, 1), to: now });
+            break;
         default:
             onDateChange(undefined);
     }
@@ -94,6 +106,10 @@ export function DateRangePicker({
                     <SelectItem value="this_month">This Month</SelectItem>
                     <SelectItem value="last_7_days">Last 7 Days</SelectItem>
                     <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                    <SelectItem value="last_2_months">Last 2 Months</SelectItem>
+                    <SelectItem value="last_3_months">Last 3 Months</SelectItem>
+                    <SelectItem value="last_6_months">Last 6 Months</SelectItem>
+                    <SelectItem value="last_year">Last Year</SelectItem>
                 </SelectContent>
             </Select>
         </div>
