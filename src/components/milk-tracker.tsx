@@ -4,9 +4,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
 import { MilkEntryDialog } from "@/components/milk-entry-dialog";
+import { MilkExpenseManager } from "@/components/milk-expense-manager";
 import type { MilkData, Milkman } from "@/types";
 import { format } from "date-fns";
+import { SlidersHorizontal } from "lucide-react";
 
 interface MilkTrackerProps {
   milkData: MilkData;
@@ -16,14 +19,15 @@ interface MilkTrackerProps {
 
 export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEntryDialogOpen, setIsEntryDialogOpen] = useState(false);
+  const [isManagerOpen, setIsManagerOpen] = useState(false);
   const initialOpenDone = useRef(false);
 
   useEffect(() => {
     // This effect ensures the dialog opens for today's date on the very first component mount.
     if (!initialOpenDone.current) {
         setSelectedDate(new Date());
-        setIsDialogOpen(true);
+        setIsEntryDialogOpen(true);
         initialOpenDone.current = true;
     }
   }, []);
@@ -31,7 +35,7 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
     setSelectedDate(new Date(date));
-    setIsDialogOpen(true); // always open on click
+    setIsEntryDialogOpen(true); // always open on click
   };
   
   const MilkDots = ({ date }: { date: Date }) => {
@@ -44,10 +48,14 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
   
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Milk Delivery Calendar</CardTitle>
+        <Button variant="outline" className="hidden md:flex" onClick={() => setIsManagerOpen(true)}>
+           <SlidersHorizontal className="mr-2 h-4 w-4" />
+           Manage Milk Expenses
+        </Button>
       </CardHeader>
-      <CardContent className="flex justify-center">
+      <CardContent className="flex flex-col items-center">
         <Calendar 
             mode="single"
             selected={selectedDate}
@@ -62,16 +70,27 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
               ),
             }}
         />
+        <Button variant="outline" className="md:hidden w-full mt-4" onClick={() => setIsManagerOpen(true)}>
+            <SlidersHorizontal className="mr-2 h-4 w-4" />
+            Manage Milk Expenses
+        </Button>
         {selectedDate && (
           <MilkEntryDialog
-            isOpen={isDialogOpen}
-            setIsOpen={setIsDialogOpen}
+            isOpen={isEntryDialogOpen}
+            setIsOpen={setIsEntryDialogOpen}
             date={selectedDate}
             milkmen={milkmen}
             dailyData={milkData[format(selectedDate, "yyyy-MM-dd")] || {}}
             updateMilkEntry={updateMilkEntry}
           />
         )}
+        <MilkExpenseManager 
+            isOpen={isManagerOpen}
+            setIsOpen={setIsManagerOpen}
+            milkData={milkData}
+            milkmen={milkmen}
+            updateMilkEntry={updateMilkEntry}
+        />
       </CardContent>
     </Card>
   );
