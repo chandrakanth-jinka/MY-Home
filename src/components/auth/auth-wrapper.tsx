@@ -24,31 +24,44 @@ export function AuthWrapper() {
 
     const checkHousehold = async () => {
       setCheckingDb(true);
-      const userDocRef = doc(db, "users", user.uid);
-      const userDocSnap = await getDoc(userDocRef);
+      try {
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
 
-      if (userDocSnap.exists()) {
-        const userProfile = userDocSnap.data() as UserProfile;
-        if (userProfile.householdId) {
-          router.replace("/dashboard");
+        if (userDocSnap.exists()) {
+          const userProfile = userDocSnap.data() as UserProfile;
+          if (userProfile.householdId) {
+            router.replace("/dashboard");
+          } else {
+            router.replace("/household");
+          }
         } else {
+          // This can happen if the user document wasn't created on signup.
+          // Send them to the household page to create/join, which also creates their user profile.
           router.replace("/household");
         }
-      } else {
-        // This case might happen if user doc creation failed after signup.
-        // For simplicity, we'll route to household selection where they can trigger a doc creation.
-        router.replace("/household");
+      } catch (error) {
+        console.error("Error checking user household:", error);
+        // Fallback in case of an error
+        router.replace("/login");
+      } finally {
+        setCheckingDb(false);
       }
-      setCheckingDb(false);
     };
 
     checkHousehold();
   }, [user, loading, router]);
 
-  return (
-    <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
-      <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      <p className="mt-4 text-muted-foreground">Loading your space...</p>
-    </div>
-  );
+  // Don't render the loader if we are not actively checking the database
+  // and the auth state is also loaded. This prevents a flash of the loader.
+  if (loading || checkingDb) {
+    return (
+      <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">Loading your space...</p>
+      </div>
+    );
+  }
+
+  return null; // Render nothing while redirecting
 }
