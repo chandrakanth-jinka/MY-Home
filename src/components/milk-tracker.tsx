@@ -24,23 +24,22 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
     setSelectedDate(new Date());
     setIsDialogOpen(true);
   }, []);
-
+  
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
-
-    setSelectedDate((prevSelectedDate) => {
-      const sameDate = prevSelectedDate?.toDateString() === date.toDateString();
-
-      setIsDialogOpen((prevIsDialogOpen) => {
-        if (sameDate) {
-          return !prevIsDialogOpen; // toggle
-        } else {
-          return true; // open on new date
-        }
-      });
-      // Always return a new Date object to ensure React triggers a re-render
-      return new Date(date);
-    });
+  
+    const isSameDate = selectedDate?.toDateString() === date.toDateString();
+  
+    if (isSameDate) {
+      // If it's the same date, just toggle the dialog
+      setIsDialogOpen(prev => !prev);
+    } else {
+      // If it's a new date, open the dialog
+      setIsDialogOpen(true);
+    }
+  
+    // Always set a new date object to ensure re-renders
+    setSelectedDate(new Date(date));
   };
   
   const MilkDots = ({ date }: { date: Date }) => {
