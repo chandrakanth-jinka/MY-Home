@@ -7,14 +7,10 @@ import { MilkTracker } from "@/components/milk-tracker";
 import { Reports } from "@/components/reports";
 import type { Expense, MilkData, Milkman } from "@/types";
 
-const initialExpenses: Expense[] = [];
-const initialMilkmen: Milkman[] = [];
-const initialMilkData: MilkData = {};
-
 export function Dashboard() {
-  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
-  const [milkData, setMilkData] = useState<MilkData>(initialMilkData);
-  const [milkmen, setMilkmen] = useState<Milkman[]>(initialMilkmen);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [milkData, setMilkData] = useState<MilkData>({});
+  const [milkmen, setMilkmen] = useState<Milkman[]>([]);
 
   const addExpense = (expense: Omit<Expense, 'id' | 'addedBy'>) => {
     setExpenses(prev => [
