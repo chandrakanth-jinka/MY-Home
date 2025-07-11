@@ -59,12 +59,16 @@ export function SignUpForm() {
         description: error.message,
       });
     }
+  }, [error, toast]);
+
+  useEffect(() => {
     if (user) {
       // On successful creation, firebase hook automatically signs them in.
       // Redirect to home to check for household.
       router.push('/');
     }
-  }, [user, error, toast, router]);
+  }, [user, router]);
+
 
   return (
     <Card className="w-full max-w-sm">

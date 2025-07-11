@@ -26,7 +26,7 @@ import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
@@ -59,10 +59,13 @@ export function LoginForm() {
         description: error.message,
       });
     }
+  }, [error, toast]);
+
+  useEffect(() => {
     if (user) {
       router.push("/");
     }
-  }, [user, error, toast, router]);
+  }, [user, router]);
 
   return (
     <Card className="w-full max-w-sm">
