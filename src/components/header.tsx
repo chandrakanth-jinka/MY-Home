@@ -26,7 +26,7 @@ export function Header() {
       <div className="container flex h-14 items-center">
         <div className="mr-4 flex items-center">
           <Logo className="h-6 w-6 mr-2 text-primary" />
-          <span className="font-bold font-headline">KinKeeper</span>
+          <span className="font-bold font-headline">My Home</span>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
           {user && (
