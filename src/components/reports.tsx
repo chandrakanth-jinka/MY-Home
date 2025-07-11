@@ -2,13 +2,13 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import type { Expense, MilkData, Milkman } from "@/types";
 import { useMemo, useState } from "react";
 import { ExcelExportButton } from "./excel-export-button";
 import { DateRangePicker } from "./ui/date-range-picker";
 import type { DateRange } from "react-day-picker";
-import { addDays, format, startOfMonth } from "date-fns";
+import { addDays, format, startOfMonth, eachDayOfInterval, compareAsc } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { ScrollArea } from "./ui/scroll-area";
 
@@ -36,8 +36,7 @@ export function Reports({ expenses, milkData, milkmen }: ReportsProps) {
     const filteredMilkData: MilkData = {};
     for (const date in milkData) {
       const d = new Date(date);
-      // Add a day to include the 'to' date in the range, as date objects are at midnight
-      if (d >= from && d < addDays(to, 1)) {
+      if (d >= from && d <= to) {
         filteredMilkData[date] = milkData[date];
       }
     }
@@ -46,17 +45,72 @@ export function Reports({ expenses, milkData, milkmen }: ReportsProps) {
   }, [expenses, milkData, milkmen, dateRange]);
 
 
-  const monthlySpending = useMemo(() => {
-    const monthMap = filteredData.filteredExpenses.reduce((acc, expense) => {
-      const month = format(expense.date, 'dd MMM');
-      acc[month] = (acc[month] || 0) + expense.amount;
-      return acc;
-    }, {} as Record<string, number>);
+  const milkmenMap = useMemo(() => {
+    const map = new Map<string, Milkman>();
+    milkmen.forEach(m => map.set(m.id, m));
+    return map;
+  }, [milkmen]);
+
+  const dailyTotals = useMemo(() => {
+    const totals: { [date: string]: { expenses: number; milk: number; total: number } } = {};
+
+    if (!dateRange?.from || !dateRange?.to) return [];
+
+    const interval = eachDayOfInterval({
+        start: dateRange.from,
+        end: dateRange.to,
+      });
+
+    interval.forEach(day => {
+        const dateStr = format(day, "yyyy-MM-dd");
+        totals[dateStr] = { expenses: 0, milk: 0, total: 0 };
+    });
+
+    filteredData.filteredExpenses.forEach(expense => {
+      const dateStr = format(expense.date, "yyyy-MM-dd");
+      if (totals[dateStr]) {
+        totals[dateStr].expenses += expense.amount;
+      }
+    });
+
+    Object.entries(filteredData.filteredMilkData).forEach(([dateStr, dailyRecord]) => {
+      if (totals[dateStr]) {
+        let dailyMilkCost = 0;
+        Object.entries(dailyRecord).forEach(([milkmanId, entry]) => {
+          const milkman = milkmenMap.get(milkmanId);
+          if (milkman) {
+            const qty = (entry.morning || 0) + (entry.evening || 0);
+            dailyMilkCost += qty * milkman.rate;
+          }
+        });
+        totals[dateStr].milk = dailyMilkCost;
+      }
+    });
     
-    return Object.entries(monthMap).map(([name, total]) => ({ name, total }));
-  }, [filteredData.filteredExpenses]);
-  
-  const totalSpent = useMemo(() => filteredData.filteredExpenses.reduce((sum, e) => sum + e.amount, 0), [filteredData.filteredExpenses]);
+    return Object.entries(totals).map(([date, data]) => ({
+      name: format(new Date(date), 'dd MMM'),
+      Expenses: data.expenses,
+      Milk: data.milk,
+      Total: data.expenses + data.milk,
+    })).sort((a, b) => compareAsc(new Date(a.name), new Date(b.name)));
+
+  }, [filteredData.filteredExpenses, filteredData.filteredMilkData, milkmenMap, dateRange]);
+
+
+  const cumulativeSpending = useMemo(() => {
+    let cumulativeTotal = 0;
+    return dailyTotals.map(day => {
+        cumulativeTotal += day.Total;
+        return {
+            name: day.name,
+            Spending: cumulativeTotal
+        }
+    });
+  }, [dailyTotals]);
+
+  const totalSpent = useMemo(() => dailyTotals.reduce((sum, day) => sum + day.Expenses, 0), [dailyTotals]);
+  const totalMilkCost = useMemo(() => dailyTotals.reduce((sum, day) => sum + day.Milk, 0), [dailyTotals]);
+
   
   const milkReport = useMemo(() => {
     const report: { [milkmanId: string]: { name: string; rate: number; totalQty: number; totalCost: number } } = {};
@@ -76,12 +130,10 @@ export function Reports({ expenses, milkData, milkmen }: ReportsProps) {
     });
   
     const totalQty = Object.values(report).reduce((sum, m) => sum + m.totalQty, 0);
-    const totalCost = Object.values(report).reduce((sum, m) => sum + m.totalCost, 0);
   
     return {
       byMilkman: Object.values(report).filter(m => m.totalQty > 0),
       totalQty,
-      totalCost,
     };
   }, [filteredData.filteredMilkData, milkmen]);
 
@@ -103,10 +155,10 @@ export function Reports({ expenses, milkData, milkmen }: ReportsProps) {
             </CardContent>
         </Card>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+                    <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">₹{totalSpent.toFixed(2)}</div>
@@ -118,32 +170,43 @@ export function Reports({ expenses, milkData, milkmen }: ReportsProps) {
                     <CardTitle className="text-sm font-medium">Total Milk Cost</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">₹{milkReport.totalCost.toFixed(2)}</div>
+                    <div className="text-2xl font-bold">₹{totalMilkCost.toFixed(2)}</div>
                     <p className="text-xs text-muted-foreground">{milkReport.totalQty.toFixed(2)} L total</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Grand Total</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">₹{(totalSpent + totalMilkCost).toFixed(2)}</div>
+                    <p className="text-xs text-muted-foreground">Total spending in selected period</p>
                 </CardContent>
             </Card>
         </div>
 
 
-        <div className="grid gap-4 md:grid-cols-2">
-            <Card>
+        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-7">
+            <Card className="lg:col-span-4">
                 <CardHeader>
-                    <CardTitle>Spending Chart</CardTitle>
-                    <CardDescription>Daily spending in selected range.</CardDescription>
+                    <CardTitle>Daily Spending Breakdown</CardTitle>
+                    <CardDescription>Expenses vs. Milk cost for the selected range.</CardDescription>
                 </CardHeader>
                 <CardContent className="pl-2">
                     <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={monthlySpending}>
+                        <BarChart data={dailyTotals}>
                             <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" angle={-45} textAnchor="end" height={50} />
+                            <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} interval={Math.floor(dailyTotals.length / 15)} />
                             <YAxis width={60} tickFormatter={(value) => `₹${value}`} />
                             <Tooltip cursor={{fill: 'hsl(var(--muted))'}} contentStyle={{backgroundColor: 'hsl(var(--background))'}}/>
-                            <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                            <Legend />
+                            <Bar dataKey="Expenses" stackId="a" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="Milk" stackId="a" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
-             <Card>
+             <Card className="lg:col-span-3">
                 <CardHeader>
                     <CardTitle>Milk Cost Breakdown</CardTitle>
                     <CardDescription>Total cost per supplier in selected range.</CardDescription>
@@ -180,6 +243,23 @@ export function Reports({ expenses, milkData, milkmen }: ReportsProps) {
                 </CardContent>
             </Card>
         </div>
+        <Card>
+            <CardHeader>
+                <CardTitle>Cumulative Spending Over Time</CardTitle>
+                <CardDescription>Shows how total spending changes over the selected period.</CardDescription>
+            </CardHeader>
+            <CardContent className="pl-2">
+                <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={cumulativeSpending}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} interval={Math.floor(cumulativeSpending.length / 15)} />
+                        <YAxis width={60} tickFormatter={(value) => `₹${value}`} />
+                        <Tooltip cursor={{fill: 'hsl(var(--muted))'}} contentStyle={{backgroundColor: 'hsl(var(--background))'}}/>
+                        <Area type="monotone" dataKey="Spending" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.2)" />
+                    </AreaChart>
+                </ResponsiveContainer>
+            </CardContent>
+        </Card>
     </div>
   );
 }
