@@ -21,8 +21,6 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
     
-    // Always set the selected date and ensure the dialog is set to open.
-    // This correctly handles re-clicking the same day.
     setSelectedDate(date);
     setIsDialogOpen(true);
   };
@@ -35,7 +33,7 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
     return null;
   };
   
-  const calendarProps: React.ComponentProps<typeof Calendar> = {
+  const calendarProps: Omit<React.ComponentProps<typeof Calendar>, 'key'> = {
     mode: "single",
     selected: selectedDate,
     onSelect: handleDateSelect,
@@ -48,8 +46,6 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
         </div>
       ),
     },
-    // The key ensures the calendar re-renders when the selected date changes, which can help with some edge cases.
-    key: selectedDate?.toString(), 
   };
 
   return (
@@ -58,7 +54,10 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
         <CardTitle>Milk Delivery Calendar</CardTitle>
       </CardHeader>
       <CardContent className="flex justify-center">
-        <Calendar {...calendarProps} />
+        <Calendar 
+            {...calendarProps}
+            key={selectedDate?.toString()} 
+        />
         {selectedDate && (
           <MilkEntryDialog
             isOpen={isDialogOpen}
