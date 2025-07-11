@@ -147,6 +147,25 @@ export const addExpense = async (householdId: string, expense: Omit<Expense, "id
   });
 };
 
+export const updateExpense = async (householdId: string, expenseId: string, updatedFields: Partial<Expense>) => {
+    if (!householdId || !expenseId) throw new Error("Household and Expense ID are required");
+    const expenseDocRef = doc(db, `households/${householdId}/expenses`, expenseId);
+    
+    const dataToUpdate: { [key: string]: any } = { ...updatedFields };
+    if (updatedFields.date) {
+        dataToUpdate.date = Timestamp.fromDate(updatedFields.date);
+    }
+
+    await updateDoc(expenseDocRef, dataToUpdate);
+};
+
+export const deleteExpense = async (householdId: string, expenseId: string) => {
+    if (!householdId || !expenseId) throw new Error("Household and Expense ID are required");
+    const expenseDocRef = doc(db, `households/${householdId}/expenses`, expenseId);
+    await deleteDoc(expenseDocRef);
+};
+
+
 // Milk Data Functions
 export const getMilkData = (householdId: string, callback: (data: MilkData) => void) => {
     const milkCol = collection(db, `households/${householdId}/milk`);
