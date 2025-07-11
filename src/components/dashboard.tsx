@@ -7,29 +7,14 @@ import { MilkTracker } from "@/components/milk-tracker";
 import { Reports } from "@/components/reports";
 import type { Expense, MilkData, Milkman } from "@/types";
 
-const initialExpenses: Expense[] = [
-  { id: '1', date: new Date(2024, 6, 20), name: 'Onions', amount: 50, category: 'Vegetables', addedBy: 'Alice' },
-  { id: '2', date: new Date(2024, 6, 20), name: 'Milk', amount: 2.5, category: 'Groceries', addedBy: 'Bob' },
-  { id: '3', date: new Date(2024, 6, 19), name: 'Rice Bag', amount: 1200, category: 'Groceries', addedBy: 'Alice' },
-  { id: '4', date: new Date(2024, 6, 18), name: 'Electricity Bill', amount: 850, category: 'Utilities', addedBy: 'Bob' },
-];
-
-const initialMilkmen: Milkman[] = [
-  { id: 'm1', name: 'Anand Dairy', rate: 58 },
-  { id: 'm2', name: 'Local Farm', rate: 65 },
-]
-
-const initialMilkData: MilkData = {
-  '2024-07-20': { m1: { morning: 1, evening: 0.5 } },
-  '2024-07-19': { m1: { morning: 1, evening: 1 } },
-  '2024-07-18': { m2: { morning: 1.5 } },
-  '2024-07-05': { m1: { morning: 1 } },
-};
+const initialExpenses: Expense[] = [];
+const initialMilkmen: Milkman[] = [];
+const initialMilkData: MilkData = {};
 
 export function Dashboard() {
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [milkData, setMilkData] = useState<MilkData>(initialMilkData);
-  const [milkmen] = useState<Milkman[]>(initialMilkmen);
+  const [milkmen, setMilkmen] = useState<Milkman[]>(initialMilkmen);
 
   const addExpense = (expense: Omit<Expense, 'id' | 'addedBy'>) => {
     setExpenses(prev => [
