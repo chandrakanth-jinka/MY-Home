@@ -16,19 +16,12 @@ interface MilkTrackerProps {
 
 export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(true); // Open dialog by default for today's date
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
-
-    // If the same date is clicked and the dialog is already open, close it.
-    if (selectedDate?.toDateString() === date.toDateString() && isDialogOpen) {
-      setIsDialogOpen(false);
-    } else {
-      // Otherwise, select the new date and open the dialog.
-      setSelectedDate(date);
-      setIsDialogOpen(true);
-    }
+    setSelectedDate(date);
+    setIsDialogOpen(true);
   };
   
   const MilkDots = (day: Date) => {
