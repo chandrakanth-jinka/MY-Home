@@ -18,15 +18,17 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(true); // Open dialog by default for today's date
 
-  const handleDateSelect = (date: Date | undefined) => {
-    if (!date) return;
+  const handleDateSelect = (day: Date | undefined) => {
+    if (!day) return;
 
-    // If the same date is clicked and the dialog is already open, close it.
-    if (selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd') && isDialogOpen) {
-      setIsDialogOpen(false);
+    const isSameDay = selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd');
+
+    if (isSameDay) {
+      // If it's the same day, just toggle the dialog
+      setIsDialogOpen(!isDialogOpen);
     } else {
-      // Otherwise, select the date and ensure the dialog is open.
-      setSelectedDate(date);
+      // If it's a new day, select it and always open the dialog
+      setSelectedDate(day);
       setIsDialogOpen(true);
     }
   };
