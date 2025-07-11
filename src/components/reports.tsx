@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bar, BarChart, CartesianGrid, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Legend } from "recharts";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { Expense, MilkData, Milkman } from "@/types";
 import { useMemo } from "react";
 import { ExcelExportButton } from "./excel-export-button";
@@ -12,19 +12,7 @@ interface ReportsProps {
   milkmen: Milkman[];
 }
 
-const COLORS = ["#16a34a", "#22c55e", "#4ade80", "#86efac", "#bbf7d0"];
-
 export function Reports({ expenses, milkData, milkmen }: ReportsProps) {
-  const expenseByCategory = useMemo(() => {
-    const categoryMap = expenses.reduce((acc, expense) => {
-      acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return Object.entries(categoryMap)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
-  }, [expenses]);
 
   const monthlySpending = useMemo(() => {
     const monthMap = expenses.reduce((acc, expense) => {
@@ -82,8 +70,8 @@ export function Reports({ expenses, milkData, milkmen }: ReportsProps) {
         </div>
 
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="lg:col-span-4">
+        <div className="grid gap-4">
+            <Card>
                 <CardHeader>
                     <CardTitle>Monthly Spending</CardTitle>
                 </CardHeader>
@@ -96,35 +84,6 @@ export function Reports({ expenses, milkData, milkmen }: ReportsProps) {
                             <Tooltip cursor={{fill: 'hsl(var(--muted))'}} contentStyle={{backgroundColor: 'hsl(var(--background))'}}/>
                             <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                         </BarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
-            <Card className="lg:col-span-3">
-                <CardHeader>
-                    <CardTitle>Expenses by Category</CardTitle>
-                    <CardDescription>Top 5 categories shown.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                            <Pie
-                                data={expenseByCategory.slice(0, 5)}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                outerRadius={80}
-                                fill="#8884d8"
-                                dataKey="value"
-                                nameKey="name"
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            >
-                                {expenseByCategory.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip contentStyle={{backgroundColor: 'hsl(var(--background))'}}/>
-                            <Legend />
-                        </PieChart>
                     </ResponsiveContainer>
                 </CardContent>
             </Card>

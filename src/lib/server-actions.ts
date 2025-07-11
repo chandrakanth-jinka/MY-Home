@@ -1,20 +1,20 @@
 "use server";
 
+// This file is currently not used but is kept for future AI feature implementation.
 import {
   categorizeExpense as categorizeExpenseFlow,
   type CategorizeExpenseInput,
 } from "@/ai/flows/categorize-expense";
 
-export async function getExpenseCategory(
+export async function getExpenseSuggestion(
   input: CategorizeExpenseInput
 ): Promise<string> {
   try {
     const result = await categorizeExpenseFlow(input);
-    return result.category;
+    return result.suggestedName;
   } catch (error) {
-    console.error("AI categorization failed:", error);
-    // In case of an error, return a default category.
-    // This prevents the UI from breaking if the AI service is unavailable.
-    return "Other";
+    console.error("AI suggestion failed:", error);
+    // In case of an error, return the original name.
+    return input.expenseName;
   }
 }

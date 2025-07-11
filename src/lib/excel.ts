@@ -14,7 +14,6 @@ export function exportToExcel(
     Date: format(expense.date, "yyyy-MM-dd"),
     Item: expense.name,
     Amount: expense.amount,
-    Category: expense.category,
     "Added By": expense.addedBy,
   }));
 

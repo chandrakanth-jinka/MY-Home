@@ -6,7 +6,6 @@ export type Expense = {
   date: Date;
   name: string;
   amount: number;
-  category: string;
   addedBy: string;
   lastEditedBy: string;
 };

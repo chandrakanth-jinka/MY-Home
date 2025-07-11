@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview Automatically categorizes expenses using AI based on user input.
+ * @fileOverview An AI flow to suggest an item name, but this is not currently used.
  *
  * - categorizeExpense - A function that categorizes an expense.
  * - CategorizeExpenseInput - The input type for the categorizeExpense function.
@@ -19,7 +19,7 @@ const CategorizeExpenseInputSchema = z.object({
 export type CategorizeExpenseInput = z.infer<typeof CategorizeExpenseInputSchema>;
 
 const CategorizeExpenseOutputSchema = z.object({
-  category: z.string().describe('The predicted category of the expense.'),
+  suggestedName: z.string().describe('A suggested, standardized name for the expense.'),
 });
 export type CategorizeExpenseOutput = z.infer<typeof CategorizeExpenseOutputSchema>;
 
@@ -31,16 +31,14 @@ const prompt = ai.definePrompt({
   name: 'categorizeExpensePrompt',
   input: {schema: CategorizeExpenseInputSchema},
   output: {schema: CategorizeExpenseOutputSchema},
-  prompt: `You are an AI assistant specialized in categorizing expenses.
-  Given the expense name, amount, and description (if available), predict the most appropriate category for the expense.
+  prompt: `You are an AI assistant. Given an expense name, suggest a cleaner, more standardized name for it.
+  For example, if the user enters 'onins', you could suggest 'Onions'.
 
   Expense Name: {{{expenseName}}}
   Amount: {{{amount}}}
   Description: {{{description}}}
 
-  Possible categories are: Vegetables, Fruits, Meat, Electricity, Ghee, Rice, Onions, Milk, Rent, Transport, Groceries, Dining Out, Entertainment, Utilities, Health, Education, Clothing, Personal Care, Home Improvement, Other.
-  Return just the category name, do not include any other text. Do not explain your reasoning.
-  The category must be from the specified list.
+  Return just the suggested name.
   `,
 });
 

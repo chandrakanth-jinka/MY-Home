@@ -19,29 +19,16 @@ import { Calendar } from "./ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import type { Expense } from "@/types";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
-import { getExpenseCategory } from "@/lib/server-actions";
 import { useToast } from "@/hooks/use-toast";
-import React, { useState, useCallback } from "react";
+import React from "react";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Item name must be at least 2 characters." }),
   amount: z.coerce.number().positive({ message: "Amount must be positive." }),
   date: z.date(),
-  category: z.string().min(1, { message: "Please select a category." }),
 });
 
-const expenseCategories = [
-  "Vegetables", "Fruits", "Meat", "Electricity", "Ghee", "Rice", "Onions",
-  "Milk", "Rent", "Transport", "Groceries", "Dining Out", "Entertainment",
-  "Utilities", "Health", "Education", "Clothing", "Personal Care", "Home Improvement", "Other",
-];
+const quickAddItems = ["Vegetables", "Fruits", "Meat", "Electricity", "Ghee", "Rent", "Auto"];
 
 interface ExpenseFormProps {
   addExpense: (expense: Omit<Expense, "id" | "addedBy" | "lastEditedBy" | "householdId">) => void;
@@ -49,7 +36,6 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({ addExpense }: ExpenseFormProps) {
   const { toast } = useToast();
-  const [isCategorizing, setIsCategorizing] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -57,28 +43,8 @@ export function ExpenseForm({ addExpense }: ExpenseFormProps) {
       name: "",
       amount: undefined,
       date: new Date(),
-      category: "",
     },
   });
-
-  const handleNameChange = useCallback(
-    async (name: string, amount: number | undefined) => {
-      if (name.length > 2 && amount && amount > 0) {
-        setIsCategorizing(true);
-        try {
-          const category = await getExpenseCategory({ expenseName: name, amount });
-          if (expenseCategories.includes(category)) {
-            form.setValue("category", category, { shouldValidate: true });
-          } else {
-             form.setValue("category", "Other", { shouldValidate: true });
-          }
-        } finally {
-          setIsCategorizing(false);
-        }
-      }
-    },
-    [form]
-  );
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     addExpense(values);
@@ -89,12 +55,16 @@ export function ExpenseForm({ addExpense }: ExpenseFormProps) {
     form.reset();
     form.setValue("date", new Date());
   }
+  
+  const handleQuickAdd = (name: string) => {
+    form.setValue("name", name, { shouldValidate: true });
+  }
 
   return (
     <div>
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField
                         control={form.control}
                         name="name"
@@ -102,10 +72,7 @@ export function ExpenseForm({ addExpense }: ExpenseFormProps) {
                             <FormItem>
                                 <FormLabel>Item Name</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="e.g. Onions" {...field} onChange={(e) => {
-                                        field.onChange(e);
-                                        handleNameChange(e.target.value, form.getValues('amount'));
-                                    }}/>
+                                    <Input placeholder="e.g. Onions" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -118,33 +85,8 @@ export function ExpenseForm({ addExpense }: ExpenseFormProps) {
                             <FormItem>
                                 <FormLabel>Amount</FormLabel>
                                 <FormControl>
-                                    <Input type="number" placeholder="e.g. 50" {...field} onChange={(e) => {
-                                        field.onChange(e);
-                                        handleNameChange(form.getValues('name'), Number(e.target.value));
-                                    }}/>
+                                    <Input type="number" placeholder="e.g. 50" {...field} />
                                 </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                     <FormField
-                        control={form.control}
-                        name="category"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Category</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value} disabled={isCategorizing}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder={isCategorizing ? "AI thinking..." : "Select a category"} />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {expenseCategories.map(cat => (
-                                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -184,6 +126,12 @@ export function ExpenseForm({ addExpense }: ExpenseFormProps) {
                             </FormItem>
                         )}
                     />
+                </div>
+                <div className="flex flex-wrap gap-2 mb-4">
+                    <span className="text-sm font-medium mr-2 self-center">Quick Add:</span>
+                    {quickAddItems.map(item => (
+                        <Button key={item} type="button" variant="outline" size="sm" onClick={() => handleQuickAdd(item)}>{item}</Button>
+                    ))}
                 </div>
                 <Button type="submit" className="w-full md:w-auto"><PlusCircle className="mr-2"/> Add Expense</Button>
             </form>
