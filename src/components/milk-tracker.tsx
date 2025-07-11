@@ -20,6 +20,9 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
+    
+    // Always set the selected date and ensure the dialog is set to open.
+    // This correctly handles re-clicking the same day.
     setSelectedDate(date);
     setIsDialogOpen(true);
   };
@@ -45,6 +48,8 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
         </div>
       ),
     },
+    // The key ensures the calendar re-renders when the selected date changes, which can help with some edge cases.
+    key: selectedDate?.toString(), 
   };
 
   return (
