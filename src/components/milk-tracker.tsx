@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { MilkEntryDialog } from "@/components/milk-entry-dialog";
@@ -18,12 +18,19 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(true); // Open dialog by default for today's date
 
+  useEffect(() => {
+    // This effect ensures the dialog opens for today's date on initial component mount.
+    // It runs only once.
+    setSelectedDate(new Date());
+    setIsDialogOpen(true);
+  }, []);
+
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
-  
+
     setSelectedDate((prevSelectedDate) => {
       const sameDate = prevSelectedDate?.toDateString() === date.toDateString();
-  
+
       setIsDialogOpen((prevIsDialogOpen) => {
         if (sameDate) {
           return !prevIsDialogOpen; // toggle
@@ -31,8 +38,8 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
           return true; // open on new date
         }
       });
-  
-      return date;
+      // Always return a new Date object to ensure React triggers a re-render
+      return new Date(date);
     });
   };
   
@@ -51,6 +58,7 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
       </CardHeader>
       <CardContent className="flex justify-center">
         <Calendar 
+            key={selectedDate?.toISOString()} // Force re-mount on date change
             mode="single"
             selected={selectedDate}
             onSelect={handleDateSelect}
