@@ -21,11 +21,13 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
 
-    // If the same day is clicked, toggle the dialog off.
-    if (selectedDate && isSameDay(date, selectedDate)) {
+    const isSameDate = selectedDate && isSameDay(date, selectedDate);
+
+    if (isSameDate) {
+      // If clicking the same date, toggle the dialog
       setIsDialogOpen(!isDialogOpen);
     } else {
-      // Otherwise, select the new date and open the dialog.
+      // If clicking a new date, select it and open the dialog
       setSelectedDate(date);
       setIsDialogOpen(true);
     }
@@ -38,12 +40,6 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
     }
     return null;
   };
-
-  const footer = selectedDate ? (
-    <p className="p-2 text-center text-sm">You selected {format(selectedDate, "PPP")}.</p>
-  ) : (
-    <p className="p-2 text-center text-sm">Please pick a day.</p>
-  );
   
   const calendarProps: React.ComponentProps<typeof Calendar> = {
     mode: "single",
