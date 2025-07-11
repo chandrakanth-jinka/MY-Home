@@ -20,8 +20,15 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
-    setSelectedDate(date);
-    setIsDialogOpen(true);
+
+    // If the same date is clicked and the dialog is already open, close it.
+    if (selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd') && isDialogOpen) {
+      setIsDialogOpen(false);
+    } else {
+      // Otherwise, select the date and ensure the dialog is open.
+      setSelectedDate(date);
+      setIsDialogOpen(true);
+    }
   };
   
   const MilkDots = (day: Date) => {
@@ -32,21 +39,6 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
     return null;
   };
   
-  const calendarProps: Omit<React.ComponentProps<typeof Calendar>, 'key'> = {
-    mode: "single",
-    selected: selectedDate,
-    onSelect: handleDateSelect,
-    className: "w-full",
-    components: {
-      DayContent: ({ date }) => (
-        <div className="relative h-full w-full flex items-center justify-center">
-          <span>{date.getDate()}</span>
-          {MilkDots(date)}
-        </div>
-      ),
-    },
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -54,7 +46,18 @@ export function MilkTracker({ milkData, milkmen, updateMilkEntry }: MilkTrackerP
       </CardHeader>
       <CardContent className="flex justify-center">
         <Calendar 
-            {...calendarProps}
+            mode="single"
+            selected={selectedDate}
+            onSelect={handleDateSelect}
+            className="w-full"
+            components={{
+              DayContent: ({ date }) => (
+                <div className="relative h-full w-full flex items-center justify-center">
+                  <span>{date.getDate()}</span>
+                  {MilkDots(date)}
+                </div>
+              ),
+            }}
         />
         {selectedDate && (
           <MilkEntryDialog
