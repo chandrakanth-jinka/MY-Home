@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from "react";
@@ -97,8 +98,10 @@ export function MilkmenManager({ milkmen }: MilkmenManagerProps) {
     }
   };
 
+  const isAddFormValid = newMilkmanName.trim().length > 0 && newMilkmanRate !== "";
+
   return (
-    <div>
+    <div className="p-2 border rounded-md">
       <h3 className="text-sm font-medium text-muted-foreground mb-2">Milk Suppliers</h3>
       <div className="space-y-2">
         {milkmen.map((milkman) =>
@@ -173,9 +176,27 @@ export function MilkmenManager({ milkmen }: MilkmenManagerProps) {
                 className="h-8 w-24"
                 placeholder="Rate/L"
               />
-            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleSaveNewMilkman}>
-              <Check className="h-4 w-4" />
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="icon" variant="ghost" className="h-8 w-8" disabled={!isAddFormValid}>
+                  <Check className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Add a new supplier?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will add "{newMilkmanName}" with a rate of ₹{Number(newMilkmanRate)}/L to your list of suppliers.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleSaveNewMilkman}>
+                    Confirm
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleCancelAdd}>
               <X className="h-4 w-4" />
             </Button>

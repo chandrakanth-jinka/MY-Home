@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -17,6 +18,13 @@ import type { Milkman, DailyMilkRecord } from "@/types";
 import React, { useState, useEffect } from "react";
 import { MilkmenManager } from "./milkmen-manager";
 import { ScrollArea } from "./ui/scroll-area";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import { ChevronsUpDown, PlusCircle } from "lucide-react";
+
 
 interface MilkEntryDialogProps {
   isOpen: boolean;
@@ -36,6 +44,7 @@ export function MilkEntryDialog({
   updateMilkEntry,
 }: MilkEntryDialogProps) {
   const [entries, setEntries] = useState<DailyMilkRecord>({});
+  const [isMilkmenOpen, setIsMilkmenOpen] = React.useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -57,7 +66,6 @@ export function MilkEntryDialog({
   const handleSave = () => {
     const dateString = format(date, "yyyy-MM-dd");
     
-    // Create a set of all milkman IDs involved
     const allMilkmanIds = new Set([...Object.keys(dailyData), ...Object.keys(entries)]);
 
     allMilkmanIds.forEach(milkmanId => {
@@ -69,7 +77,6 @@ export function MilkEntryDialog({
       const originalEvening = originalEntry.evening;
       const newEvening = newEntry.evening;
 
-      // Only update if something actually changed
       if (originalMorning !== newMorning || originalEvening !== newEvening) {
         updateMilkEntry(dateString, milkmanId, { morning: newMorning, evening: newEvening });
       }
@@ -92,7 +99,23 @@ export function MilkEntryDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <MilkmenManager milkmen={milkmen} />
+        <Collapsible
+          open={isMilkmenOpen}
+          onOpenChange={setIsMilkmenOpen}
+          className="w-full space-y-2"
+        >
+          <CollapsibleTrigger asChild>
+             <Button variant="ghost" className="w-full justify-between px-3">
+              <span className="font-semibold">Manage Milk Suppliers</span>
+              <ChevronsUpDown className="h-4 w-4" />
+              <span className="sr-only">Toggle</span>
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+             <MilkmenManager milkmen={milkmen} />
+          </CollapsibleContent>
+        </Collapsible>
+        
         <Separator />
         
         <ScrollArea className="max-h-[220px] pr-4">
