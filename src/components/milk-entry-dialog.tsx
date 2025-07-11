@@ -95,7 +95,7 @@ export function MilkEntryDialog({
         <MilkmenManager milkmen={milkmen} />
         <Separator />
         
-        <ScrollArea className="max-h-[300px] pr-4">
+        <ScrollArea className="max-h-[220px] pr-4">
           <div className="py-4 space-y-6">
             {milkmen.length > 0 ? milkmen.map((milkman, index) => (
               <div key={milkman.id}>
