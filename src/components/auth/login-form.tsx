@@ -55,51 +55,81 @@ export function LoginForm() {
     await signInWithEmailAndPassword(values.email, values.password);
   }
 
+  function isInWebView() {
+    // Simple check for iOS/Android WebView
+    const ua = window.navigator.userAgent || '';
+    return (
+      (ua.includes('wv') || // Android WebView
+        ua.includes('WebView')) && // iOS WebView
+      !window.navigator.standalone
+    );
+  }
+
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
     try {
+      if (isInWebView()) {
+        toast({
+          variant: "destructive",
+          title: "Google Sign-In Not Supported",
+          description: "Google sign-in is not supported in this environment. Please open the app in your device's browser.",
+        });
+        return;
+      }
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       const userDocRef = doc(db, "users", user.uid);
       const userDocSnap = await getDoc(userDocRef);
       if (!userDocSnap.exists()) {
-        await setDoc(userDocRef, {
-          uid: user.uid,
-          email: user.email,
-          name: user.displayName || "",
-          providers: user.providerData.map(p => p.providerId),
-          createdAt: serverTimestamp(),
-        }, { merge: true });
+        await setDoc(
+          userDocRef,
+          {
+            uid: user.uid,
+            email: user.email,
+            name: user.displayName || "",
+            providers: user.providerData.map((p) => p.providerId),
+            createdAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
       }
       // Redirect to home/dashboard after successful sign-in
       router.push("/");
     } catch (error: any) {
-      if (error.code === 'auth/account-exists-with-different-credential') {
+      if (error.code === "auth/account-exists-with-different-credential") {
         const email = error.customData?.email;
         if (email) {
           const methods = await fetchSignInMethodsForEmail(auth, email);
-          if (methods.includes('password')) {
+          if (methods.includes("password")) {
             toast({
               variant: "destructive",
               title: "Account Exists",
-              description: `An account already exists with this email using a password. Please sign in with your email and password first, then link your Google account from your profile settings.`,
+              description:
+                "An account already exists with this email using a password. Please sign in with your email and password first, then link your Google account from your profile settings.",
             });
           } else {
             toast({
               variant: "destructive",
               title: "Account Exists",
-              description: `An account already exists with this email using: ${methods.join(', ')}. Please sign in with that method first, then link your Google account from your profile settings.`,
+              description: `An account already exists with this email using: ${methods.join(", ")}. Please sign in with that method first, then link your Google account from your profile settings.`,
             });
           }
         } else {
           toast({
             variant: "destructive",
             title: "Account Exists",
-            description: `An account already exists with this email. Please sign in with your original method first, then link your Google account from your profile settings.`,
+            description:
+              "An account already exists with this email. Please sign in with your original method first, then link your Google account from your profile settings.",
           });
         }
+      } else if (error.code === "auth/popup-blocked") {
+        toast({
+          variant: "destructive",
+          title: "Popup Blocked",
+          description: "Your browser blocked the Google sign-in popup. Please allow popups and try again, or use a different browser.",
+        });
       } else {
         toast({
           variant: "destructive",
