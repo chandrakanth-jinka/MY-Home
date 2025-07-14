@@ -8,13 +8,29 @@ import { useSignOut } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { useAuthState } from "react-firebase-hooks/auth";
+import { useUserProfile, leaveHousehold as leaveHouseholdUtil } from "@/hooks/useUserProfile";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 export function Header() {
   const [user] = useAuthState(auth);
   const [signOut] = useSignOut(auth);
   const router = useRouter();
 
+  const { userProfile } = useUserProfile(user?.uid);
+
+  const handleLeaveHousehold = async () => {
+    if (!user?.uid) return;
+    await leaveHouseholdUtil(user.uid);
+    router.push("/household");
+  };
+
   const handleSignOut = async () => {
+    localStorage.removeItem('house_id');
     const success = await signOut();
     if (success) {
       router.push('/login');
@@ -30,9 +46,23 @@ export function Header() {
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
           {user && (
-            <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign Out">
-              <LogOut className="h-5 w-5" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Sign Out">
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {userProfile?.householdId && (
+                  <DropdownMenuItem onClick={handleLeaveHousehold}>
+                    Leave Household
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={handleSignOut}>
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           <ThemeToggle />
         </div>

@@ -12,6 +12,8 @@ import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { Button } from "@/components/ui/button";
+import { GoogleAuthProvider, linkWithPopup } from "firebase/auth";
 
 export function Dashboard() {
   const [user, authLoading] = useAuthState(auth);
@@ -22,6 +24,25 @@ export function Dashboard() {
   const [milkData, setMilkData] = useState<MilkData>({});
   const [milkmen, setMilkmen] = useState<Milkman[]>([]);
   const [loading, setLoading] = useState(true);
+  const [linking, setLinking] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
+
+  // Helper to check if Google is already linked
+  const isGoogleLinked = user?.providerData.some((p) => p.providerId === 'google.com');
+
+  const handleLinkGoogle = async () => {
+    setLinking(true);
+    setLinkError(null);
+    try {
+      const provider = new GoogleAuthProvider();
+      await linkWithPopup(user, provider);
+      window.location.reload(); // Refresh to update providerData
+    } catch (err: any) {
+      setLinkError(err.message);
+    } finally {
+      setLinking(false);
+    }
+  };
 
   useEffect(() => {
     if (authLoading || profileLoading) return;

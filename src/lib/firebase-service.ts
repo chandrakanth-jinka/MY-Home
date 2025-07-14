@@ -256,3 +256,8 @@ export const deleteMilkman = async (householdId: string, milkmanId: string) => {
     // Note: This does not delete the historical milk entries for this milkman.
     // That data will remain but won't be editable through the UI anymore. This is intended.
 };
+
+export const leaveHousehold = async (uid: string) => {
+  const userDocRef = doc(db, "users", uid);
+  await updateDoc(userDocRef, { householdId: deleteField() });
+};

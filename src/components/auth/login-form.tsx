@@ -26,8 +26,11 @@ import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { GoogleAuthProvider, signInWithPopup, fetchSignInMethodsForEmail } from "firebase/auth";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -38,6 +41,7 @@ export function LoginForm() {
   const [signInWithEmailAndPassword, user, loading, error] = useSignInWithEmailAndPassword(auth);
   const { toast } = useToast();
   const router = useRouter();
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,6 +53,63 @@ export function LoginForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     await signInWithEmailAndPassword(values.email, values.password);
+  }
+
+  async function handleGoogleSignIn() {
+    setGoogleLoading(true);
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      const userDocRef = doc(db, "users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      if (!userDocSnap.exists()) {
+        await setDoc(userDocRef, {
+          uid: user.uid,
+          email: user.email,
+          name: user.displayName || "",
+          providers: user.providerData.map(p => p.providerId),
+          createdAt: serverTimestamp(),
+        }, { merge: true });
+      }
+      // Redirect to home/dashboard after successful sign-in
+      router.push("/");
+    } catch (error: any) {
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        const email = error.customData?.email;
+        if (email) {
+          const methods = await fetchSignInMethodsForEmail(auth, email);
+          if (methods.includes('password')) {
+            toast({
+              variant: "destructive",
+              title: "Account Exists",
+              description: `An account already exists with this email using a password. Please sign in with your email and password first, then link your Google account from your profile settings.`,
+            });
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Account Exists",
+              description: `An account already exists with this email using: ${methods.join(', ')}. Please sign in with that method first, then link your Google account from your profile settings.`,
+            });
+          }
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Account Exists",
+            description: `An account already exists with this email. Please sign in with your original method first, then link your Google account from your profile settings.`,
+          });
+        }
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Google Sign-In Failed",
+          description: error.message,
+        });
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -108,6 +169,23 @@ export function LoginForm() {
             </Button>
           </form>
         </Form>
+        <div className="my-4 flex items-center justify-center">
+          <span className="text-xs text-muted-foreground">or</span>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full flex items-center justify-center py-3 text-base md:text-sm"
+          onClick={handleGoogleSignIn}
+          disabled={googleLoading}
+        >
+          {googleLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <svg className="mr-2 h-5 w-5" viewBox="0 0 48 48"><g><path fill="#4285F4" d="M24 9.5c3.54 0 6.7 1.22 9.19 3.22l6.85-6.85C36.68 2.36 30.74 0 24 0 14.82 0 6.71 5.48 2.69 13.44l7.98 6.2C12.13 13.13 17.62 9.5 24 9.5z" /><path fill="#34A853" d="M46.1 24.5c0-1.64-.15-3.22-.42-4.74H24v9.04h12.42c-.54 2.9-2.18 5.36-4.64 7.04l7.18 5.6C43.98 37.36 46.1 31.36 46.1 24.5z" /><path fill="#FBBC05" d="M10.67 28.04c-1.04-3.1-1.04-6.44 0-9.54l-7.98-6.2C.64 16.36 0 20.06 0 24c0 3.94.64 7.64 2.69 11.7l7.98-6.2z" /><path fill="#EA4335" d="M24 48c6.74 0 12.68-2.24 16.98-6.12l-7.18-5.6c-2.02 1.36-4.6 2.16-7.8 2.16-6.38 0-11.87-3.63-14.33-8.94l-7.98 6.2C6.71 42.52 14.82 48 24 48z" /><path fill="none" d="M0 0h48v48H0z" /></g></svg>
+          Continue with Google
+        </Button>
+        <div className="mt-2 text-xs text-center text-muted-foreground md:text-sm">
+          New or returning users can use Google to sign up or sign in instantly.
+        </div>
       </CardContent>
       <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">

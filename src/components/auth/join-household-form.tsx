@@ -19,11 +19,13 @@ import { joinHousehold } from "@/lib/firebase-service";
 import type { User } from "firebase/auth";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const formSchema = z.object({
-    name: z.string().min(3, { message: "Household name must be at least 3 characters." }).max(50),
-    pin: z.string().length(4, { message: "PIN must be exactly 4 digits." }).regex(/^\d{4}$/, "PIN must be numeric."),
-  });
+  name: z.string().min(3, { message: "Household name must be at least 3 characters." }).max(50),
+  pin: z.string().length(4, { message: "PIN must be exactly 4 digits." }).regex(/^\d{4}$/, "PIN must be numeric."),
+});
 
 interface JoinHouseholdFormProps {
   user: User;
@@ -47,10 +49,31 @@ export function JoinHouseholdForm({ user, onJoined }: JoinHouseholdFormProps) {
     try {
       const success = await joinHousehold(user, values.name, values.pin);
       if (success) {
-        toast({
-          title: "Joined Household!",
-          description: `You are now a member of ${values.name}.`,
-        });
+        // Fetch the user doc to get the householdId
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          if (userData.householdId) {
+            localStorage.setItem('house_id', userData.householdId);
+          }
+        }
+        // Debug: fetch and log user doc
+        const userDocRefAfterJoin = doc(db, "users", user.uid);
+        const userDocSnapAfterJoin = await getDoc(userDocRefAfterJoin);
+        if (userDocSnapAfterJoin.exists()) {
+          const userDataAfterJoin = userDocSnapAfterJoin.data();
+          console.log("User doc after joinHousehold:", userDataAfterJoin);
+          toast({
+            title: "Joined Household!",
+            description: `You are now a member of ${values.name}. HouseholdId: ${userDataAfterJoin.householdId}`,
+          });
+        } else {
+          toast({
+            title: "Joined Household!",
+            description: `You are now a member of ${values.name}. But user doc not found!`,
+          });
+        }
         onJoined();
       } else {
         throw new Error("Household not found or PIN is incorrect.");
@@ -105,8 +128,8 @@ export function JoinHouseholdForm({ user, onJoined }: JoinHouseholdFormProps) {
               )}
             />
             <Button type="submit" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Join Household
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Join Household
             </Button>
           </form>
         </Form>

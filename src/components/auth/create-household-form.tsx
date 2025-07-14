@@ -20,6 +20,8 @@ import { createHousehold } from "@/lib/firebase-service";
 import type { User } from "firebase/auth";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const formSchema = z.object({
   name: z.string().min(3, { message: "Household name must be at least 3 characters." }).max(50),
@@ -47,10 +49,29 @@ export function CreateHouseholdForm({ user, onCreated }: CreateHouseholdFormProp
     setLoading(true);
     try {
       await createHousehold(user, values.name, values.pin);
-      toast({
-        title: "Household Created!",
-        description: `Welcome to ${values.name}!`,
-      });
+      // Fetch the user doc to get the householdId
+      const userDocRefForLocal = doc(db, "users", user.uid);
+      const userDocSnapForLocal = await getDoc(userDocRefForLocal);
+      if (userDocSnapForLocal.exists()) {
+        const userData = userDocSnapForLocal.data();
+        if (userData.householdId) {
+          localStorage.setItem('house_id', userData.householdId);
+        }
+      }
+      // Debug: fetch and log user doc
+      if (userDocSnapForLocal.exists()) {
+        const userData = userDocSnapForLocal.data();
+        console.log("User doc after createHousehold:", userData);
+        toast({
+          title: "Household Created!",
+          description: `Welcome to ${values.name}! HouseholdId: ${userData.householdId}`,
+        });
+      } else {
+        toast({
+          title: "Household Created!",
+          description: `Welcome to ${values.name}! But user doc not found!`,
+        });
+      }
       onCreated();
     } catch (error: any) {
       console.error("Household creation failed:", error);
@@ -60,7 +81,7 @@ export function CreateHouseholdForm({ user, onCreated }: CreateHouseholdFormProp
         description: error.message || "Could not create the household. Please try again.",
       });
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   }
 
